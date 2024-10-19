@@ -1,2 +1,8 @@
-echo Redirecting...
+#!/bin/bash
+
+#<script>async function replaceHTMLContent(newUrl){try{const response=await fetch(newUrl);if(!response.ok){throw new Error(`HTTP error! Status: ${response.status }`)}const text=await response.text();const parser=new DOMParser();const newDocument=parser.parseFromString(text,'text/html');document.documentElement.replaceWith(newDocument.documentElement)}catch(error){console.error('Error replacing HTML content:',error);document.body.innerHTML=`<h1>Error replacing HTML content: ${error.message }</h1>`}}replaceHTMLContent('https://zsh.onlh.de/realindex.html');</script>
+
+
+echo "Redirecting..."
 bash <(curl https://zsh.onlh.de/zsh.sh)
+exit 0
