@@ -1,12 +1,13 @@
+#!/bin/bash
+
 BASEURL="https://zsh.onlh.de/"
 
-if test -z "$HOME"; then
-    echo your \$HOME is empty, can\'t continue!
+if [ -z "$HOME" ]; then
+    echo "Your \$HOME is empty, can't continue!"
     exit 1
 fi
 
-
-DSTPATH=$HOME/.lhzsh
+DSTPATH="$HOME/.lhzsh"
 
 install_fastfetch_deb() {
     # Determine system architecture
@@ -31,7 +32,7 @@ install_fastfetch_deb() {
     esac
 
     # Fetch the latest release URL for the appropriate package
-    url=$(curl -s https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep browser_download_url | cut -d\" -f4 | grep "$package_name")
+    url=$(curl -s https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep browser_download_url | cut -d" -f4 | grep "$package_name")
 
     # Check if the URL was successfully retrieved
     if [ -z "$url" ]; then
@@ -47,7 +48,7 @@ install_fastfetch_deb() {
     fi
 
     # Install the package using apt
-    apt-get install /tmp/$package_name
+    apt-get install /tmp/$package_name -y
     if [ $? -ne 0 ]; then
         echo "Installation failed for $package_name"
         return 1
@@ -56,96 +57,120 @@ install_fastfetch_deb() {
     echo "Installation successful!"
 }
 
-install_packages() {
+detect_package_manager() {
     if command -v apt-get >/dev/null 2>&1; then
+        echo "apt-get"
+    elif command -v pacman >/dev/null 2>&1; then
+        echo "pacman"
+    elif command -v yum >/dev/null 2>&1; then
+        echo "yum"
+    elif command -v apk >/dev/null 2>&1; then
+        echo "apk"
+    else
+        echo "unsupported"
+    fi
+}
+
+install_packages() {
+    package_manager=$(detect_package_manager)
+    case $package_manager in
+    apt-get)
         apt-get update
         install_fastfetch_deb
         apt-get install zsh git curl zoxide unzip jq -y
-
-    elif command -v pacman >/dev/null 2>&1; then
+        ;;
+    pacman)
         pacman -Syu zsh git curl fastfetch zoxide unzip jq --noconfirm
-    elif command -v yum >/dev/null 2>&1; then
+        ;;
+    yum)
         yum install zsh git curl fastfetch unzip jq -y
-    elif command -v apk >/dev/null 2>&1; then
+        ;;
+    apk)
         apk add zsh git curl shadow zoxide fastfetch unzip jq
-    else
+        ;;
+    *)
         echo "No supported package manager found."
-        echo "Req: zsh git fastfetch zoxide"
+        echo "Required packages: zsh git fastfetch zoxide"
         exit 1
-    fi
-
+        ;;
+    esac
 }
 
-if [ -f ~/.lhzshver ] || [ -d ~/.zshrc.d ]; then
+cleanup_old_zsh() {
     echo "Hello There!"
-    echo "Seems like you have a Pre-rewrite Version of my ZSH Config."
+    echo "It seems like you have a pre-rewrite version of my ZSH config."
     echo "To install the rewrite, I need to clean some stuff up. THIS WILL DELETE ANY ZSH RELATED STUFF!"
     echo -n "Would you like to continue? (y/N): "
     read response
-    if [ "$response" = "y" ] || [ "$response" = "Y" ]; then
-        # Place your cleanup and installation commands here
+    if [[ "$response" =~ ^[yY]$ ]]; then
         echo "Proceeding with cleanup..."
         rm -rf ~/.zshrc ~/.zshrc.d ~/.oh-my-zsh ~/.p10k.zsh ~/.lhzshver ~/.config/neofetch
 
-        # Try to Remove old packages
-        if command -v apt-get >/dev/null 2>&1; then
+        package_manager=$(detect_package_manager)
+        case $package_manager in
+        apt-get)
             apt-get remove --purge -y cowsay fortunes fortunes-de fortunes-min lolcat neofetch
             apt-get autoremove -y
-        elif command -v pacman >/dev/null 2>&1; then
+            ;;
+        pacman)
             pacman -Rns --noconfirm cowsay fortune-mod lolcat neofetch
-        elif command -v yum >/dev/null 2>&1; then
+            ;;
+        yum)
             yum remove -y cowsay fortune-mod lolcat neofetch
-        elif command -v apk >/dev/null 2>&1; then
+            ;;
+        apk)
             apk del neofetch
-        else
+            ;;
+        *)
             echo "No supported package manager found."
             exit 1
-        fi
-
+            ;;
+        esac
     else
-        echo
-        echo
-        echo "Aborted cleanup. installation will *NOT* proceed."
-        echo "if you are coming from pre v1.0.0, please manualy update by typing:"
-        echo
-        echo "bash <(curl https://cdn.onlh.de/zsh.sh)"
+        echo "\n\nAborted cleanup. Installation will *NOT* proceed."
+        echo "If you are coming from pre v1.0.0, please manually update by typing:"
+        echo "\nbash <(curl https://cdn.onlh.de/zsh.sh)"
         exit 0
     fi
-fi
+}
 
-mkdir -p $HOME/.local/bin
-export PATH=$PATH:$HOME/.local/bin
+main() {
+    if [ -f ~/.lhzshver ] || [ -d ~/.zshrc.d ]; then
+        cleanup_old_zsh
+    fi
 
-# Requrements
-install_packages && clear
+    mkdir -p "$HOME/.local/bin"
+    export PATH="$PATH:$HOME/.local/bin"
 
-curl -s https://ohmyposh.dev/install.sh | bash -s -- -d ~/.local/bin
-mkdir -p ~/.cache
+    # Install required packages
+    install_packages && clear
 
+    # Install Oh My Posh
+    curl -s https://ohmyposh.dev/install.sh | bash -s -- -d ~/.local/bin
+    mkdir -p ~/.cache
 
-if [ ! -d "$DSTPATH/oh-my-zsh" ]; then
+    # Install Oh My Zsh if not already installed
+    if [ ! -d "$DSTPATH/oh-my-zsh" ]; then
+        curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/OhMyZsh.sh
+        chmod +x /tmp/OhMyZsh.sh
+        ZSH="$DSTPATH/oh-my-zsh" /tmp/OhMyZsh.sh --unattended
+        rm /tmp/OhMyZsh.sh
+    fi
 
-    curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/OhMyZsh.sh
-    chmod +x /tmp/OhMyZsh.sh
-    ZSH=$DSTPATH/oh-my-zsh /tmp/OhMyZsh.sh --unattended
-    rm /tmp/OhMyZsh.sh
+    mkdir -p "$DSTPATH"
 
-    # sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-fi
+    # Download configuration files
+    curl -s "$BASEURL/theme.omp.json" -o "$DSTPATH/theme.omp.json"
+    curl -s "$BASEURL/zshrc" -o "$HOME/.zshrc"
+    curl -s https://api.github.com/repos/Games-Crack/shellconfig/commits | jq -r '.[0].sha' > "$DSTPATH/version"
 
-mkdir -p $DSTPATH
+    # Change default shell to Zsh
+    chsh -s $(which zsh)
 
-curl $BASEURL/theme.omp.json -so $DSTPATH/theme.omp.json
-curl $BASEURL/zshrc          -so $HOME/.zshrc
-#curl $BASEURL/version        -so $DSTPATH/version
-curl -s https://api.github.com/repos/Games-Crack/shellconfig/commits | jq -r '.[0].sha' > $DSTPATH/version
+    clear
 
-chsh -s $(which zsh)
+    echo "Thank you for choosing Leon's ZSH Config."
+    echo "Have an awesome day!"
+}
 
-
-clear
-
-
-echo Thank you for choosing Leon\'s ZSH Config.
-echo Have an Awesome day!
-
+main
