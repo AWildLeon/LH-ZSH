@@ -1,4 +1,4 @@
-BASEURL="https://cdn.onlh.de/zsh/"
+BASEURL="https://zsh.onlh.de/"
 
 if test -z "$HOME"; then
     echo your \$HOME is empty, can\'t continue!
