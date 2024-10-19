@@ -32,7 +32,7 @@ install_fastfetch_deb() {
     esac
 
     # Fetch the latest release URL for the appropriate package
-    url=$(curl -s https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep browser_download_url | cut -d" -f4 | grep "$package_name")
+    url=$(curl -s https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep browser_download_url | cut -d\" -f4 | grep "$package_name")
 
     # Check if the URL was successfully retrieved
     if [ -z "$url" ]; then
