@@ -26,6 +26,15 @@ if [ -z "$NOTRECOMENDED_DONTUPDATE" ]; then
         read -r response
         if [ -z "$response" ] || [[ $response =~ ^[Yy] ]]; then
             echo "Updating lhzsh to version $remote_ver"
+            
+            # Fetch and display changelog
+            if [ -n "$local_ver" ]; then
+                echo -e "\nFetching changelog since version $local_ver...\n"
+                curl -s "https://api.github.com/repos/Games-Crack/shellconfig/compare/$local_ver...$remote_ver" | jq -r '.commits[] | "- " + .commit.message'
+            fi
+
+            # Update the local version and run update script
+            echo $remote_ver > $LHZSH_INSTBASE/version
             bash <(curl $LHZSH_BASEURL/zsh.sh)
             zsh
             exit 0
