@@ -60,14 +60,14 @@ install_packages() {
     if command -v apt-get >/dev/null 2>&1; then
         apt-get update
         install_fastfetch_deb
-        apt-get install zsh git curl zoxide unzip -y
+        apt-get install zsh git curl zoxide unzip jq -y
 
     elif command -v pacman >/dev/null 2>&1; then
-        pacman -Syu zsh git curl fastfetch zoxide unzip --noconfirm
+        pacman -Syu zsh git curl fastfetch zoxide unzip jq --noconfirm
     elif command -v yum >/dev/null 2>&1; then
-        yum install zsh git curl fastfetch unzip -y
+        yum install zsh git curl fastfetch unzip jq -y
     elif command -v apk >/dev/null 2>&1; then
-        apk add zsh git curl shadow zoxide fastfetch unzip
+        apk add zsh git curl shadow zoxide fastfetch unzip jq
     else
         echo "No supported package manager found."
         echo "Req: zsh git fastfetch zoxide"
@@ -137,8 +137,8 @@ mkdir -p $DSTPATH
 
 curl $BASEURL/theme.omp.json -so $DSTPATH/theme.omp.json
 curl $BASEURL/zshrc          -so $HOME/.zshrc
-curl $BASEURL/version        -so $DSTPATH/version
-
+#curl $BASEURL/version        -so $DSTPATH/version
+curl -s https://api.github.com/repos/Games-Crack/shellconfig/commits | jq -r '.[0].sha' > $DSTPATH/version
 
 chsh -s $(which zsh)
 

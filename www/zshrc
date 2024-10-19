@@ -16,12 +16,12 @@ if [ -z "$NOTRECOMENDED_DONTUPDATE" ]; then
     local_ver=$(cat $LHZSH_INSTBASE/version 2>/dev/null)
 
     # Attempt to fetch the remote version
-    remote_ver=$(curl -fsm 1 $LHZSH_BASEURL/version)
+    remote_ver=$(curl -s https://api.github.com/repos/Games-Crack/shellconfig/commits | jq -r '.[0].sha')
     curl_exit_code=$?
 
     # Proceed if curl was successful and versions do not match
     if [ $curl_exit_code -eq 0 ] && [ "$local_ver" != "$remote_ver" ]; then
-        curl -fs $LHZSH_BASEURL/changelog.txt
+        
         echo -e "A new version of Leon's zsh config is available.\nThis will delete any custom configuration.\nWould you like to update? (Y/n)"
         read -r response
         if [ -z "$response" ] || [[ $response =~ ^[Yy] ]]; then
@@ -36,10 +36,6 @@ if [ -z "$NOTRECOMENDED_DONTUPDATE" ]; then
         # Output an error if curl failed but don't exit
         echo "WARN: Update Check failed!"
     fi
-
-    # Unset variables to clean up the environment
-    unset local_ver remote_ver curl_exit_code response
-
 fi
 
 export PATH=$PATH:$HOME/.local/bin
