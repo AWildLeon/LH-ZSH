@@ -162,7 +162,7 @@ main() {
     # Download configuration files
     curl -s "$BASEURL/theme.omp.json" -o "$DSTPATH/theme.omp.json"
     curl -s "$BASEURL/zshrc" -o "$HOME/.zshrc"
-    curl -s https://api.github.com/repos/Games-Crack/shellconfig/commits | jq -r '.[0].sha' > "$DSTPATH/version"
+    curl -s "$BASEURL/latest_version" | jq -r '.[0].sha' > "$DSTPATH/version"
 
     # Change default shell to Zsh
     chsh -s $(which zsh)
