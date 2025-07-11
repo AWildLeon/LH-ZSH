@@ -1,14 +1,14 @@
 #!/usr/bin/env zsh
 # WARNING:
-# THIS FILE IS MANAGED BY LH ZSH
+# THIS FILE IS MANAGED BY FR ZSH
 # MODIFICATIONS WILL ONLY STAY TILL THE NEXT UPDATE!
 
 # Configuration Variables
-LHZSH_INSTBASE="$HOME/.lhzsh"
-LHZSH_BASEURL="https://zsh.onlh.de"
+FRZSH_INSTBASE="$HOME/.frzsh"
+FRZSH_BASEURL="https://zsh.onfr.de"
 
 # Source custom start script if it exists
-[[ -f "$HOME/.lhzsh.custom/start.zsh" ]] && source "$HOME/.lhzsh.custom/start.zsh"
+[[ -f "$HOME/.frzsh.custom/start.zsh" ]] && source "$HOME/.frzsh.custom/start.zsh"
 
 # Check required commands for update functionality without locking out the user.
 update_check_enabled=true
@@ -27,7 +27,7 @@ check_for_updates() {
     fi
 
     # Define file to record the last successful update check date
-    local last_check_file="${LHZSH_INSTBASE}/.last_update_check"
+    local last_check_file="${FRZSH_INSTBASE}/.last_update_check"
     local current_date
     current_date=$(date +%Y-%m-%d)
 
@@ -41,14 +41,14 @@ check_for_updates() {
     fi
 
     # Fetch local version if available
-    local version_file="${LHZSH_INSTBASE}/version"
+    local version_file="${FRZSH_INSTBASE}/version"
     local local_ver=""
     [[ -f "$version_file" ]] && local_ver=$(<"$version_file")
 
     # Attempt to fetch the remote version from the base URL.
     # Remove control characters to avoid JSON parsing issues.
     local remote_ver
-    remote_ver=$(curl -s "${LHZSH_BASEURL}/latest_version" | tr -d '\000-\031')
+    remote_ver=$(curl -s "${FRZSH_BASEURL}/latest_version" | tr -d '\000-\031')
     if [[ $? -ne 0 || -z "$remote_ver" ]]; then
         echo "WARN: Update check failed (no internet or bad response)!" >&2
         return
@@ -66,14 +66,14 @@ check_for_updates() {
 
     # Proceed with update prompt if remote version differs from local version.
     if [[ "$local_ver" != "$remote_ver" ]]; then
-        echo "A new version of Leon's zsh config is available."
+        echo "A new version of Flo's zsh config is available."
         echo "This will delete any custom configuration."
         read -r "response?Would you like to update? (Y/n) "
         if [[ -z "$response" || "$response" =~ ^[Yy]$ ]]; then
-            echo "Updating lhzsh to version $remote_ver"
+            echo "Updating frzsh to version $remote_ver"
             # Note: Changelog functionality has been omitted when using this endpoint.
             printf "%s" "$remote_ver" > "$version_file"
-            bash <(curl -s "${LHZSH_BASEURL}/zsh.sh")
+            bash <(curl -s "${FRZSH_BASEURL}/zsh.sh")
             exec zsh
         else
             echo "Update canceled."
@@ -90,7 +90,7 @@ fi
 export PATH="$PATH:$HOME/.local/bin"
 
 # Configure Oh-My-Zsh
-export ZSH="${LHZSH_INSTBASE}/oh-my-zsh"
+export ZSH="${FRZSH_INSTBASE}/oh-my-zsh"
 zstyle ':omz:update' mode auto    # Update automatically without asking
 zstyle ':omz:update' frequency 30   # Auto-update frequency in days
 
@@ -108,14 +108,14 @@ fi
 plugins=(git docker docker-compose systemd vscode zoxide $DISTROPLUGIN)
 
 # Source custom plugins script if it exists
-[[ -f "$HOME/.lhzshrc.custom/plugins.zsh" ]] && source "$HOME/.lhzshrc.custom/plugins.zsh"
+[[ -f "$HOME/.frzshrc.custom/plugins.zsh" ]] && source "$HOME/.frzshrc.custom/plugins.zsh"
 
 # Load oh-my-zsh
 source "$ZSH/oh-my-zsh.sh"
 
 # Initialize prompt with oh-my-posh if available
 if command -v oh-my-posh >/dev/null 2>&1; then
-    eval "$(oh-my-posh init zsh --config "${LHZSH_INSTBASE}/theme.omp.json")"
+    eval "$(oh-my-posh init zsh --config "${FRZSH_INSTBASE}/theme.omp.json")"
 else
     echo "oh-my-posh not found. Using default prompt."
 fi
@@ -134,11 +134,11 @@ if [[ -o interactive ]]; then
 fi
 
 # Source custom end script if it exists
-[[ -f "$HOME/.lhzshrc.custom/end.zsh" ]] && source "$HOME/.lhzshrc.custom/end.zsh"
+[[ -f "$HOME/.frzshrc.custom/end.zsh" ]] && source "$HOME/.frzshrc.custom/end.zsh"
 
 # Cleanup environment variables
-unset LHZSH_INSTBASE LHZSH_BASEURL
+unset FRZSH_INSTBASE FRZSH_BASEURL
 
 # WARNING:
-# THIS FILE IS MANAGED BY LH ZSH
+# THIS FILE IS MANAGED BY FR ZSH
 # MODIFICATIONS WILL ONLY STAY TILL THE NEXT UPDATE!
