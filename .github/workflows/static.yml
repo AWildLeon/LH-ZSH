@@ -31,8 +31,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Remove all lines between a \#GHA-REMOVE-BEGIN and \#GHA-REMOVE-END comment
+        run: |
+          find . -type f -name '*.sh' -exec sed -i '/#GHA-REMOVE-BEGIN/,/#GHA-REMOVE-END/d' {} +
+          find . -type f -name '*.html' -exec sed -i '/#GHA-REMOVE-BEGIN/,/#GHA-REMOVE-END/d' {} +
+
+      - name: Replace INSERT-PROJECT-NAME with actual project name
+        run: |
+          find . -type f -name '*.html' -exec sed -i 's/INSERT-PROJECT-NAME/LH-ZSH/g' {} +
+          find . -type f -name '*.sh' -exec sed -i 's/INSERT-PROJECT-NAME/LH-ZSH/g' {} +
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

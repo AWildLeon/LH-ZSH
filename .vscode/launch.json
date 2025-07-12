@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run debugserver.sh",
+      "request": "launch",
+      "type": "bashdb",
+      "program": "${workspaceFolder}/debugserver.sh",
+      "cwd": "${workspaceFolder}",
+      "args": [],
+      "env": {},
+      "console": "integratedTerminal",
+    }
+  ]
+}
