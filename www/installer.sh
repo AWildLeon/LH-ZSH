@@ -167,6 +167,15 @@ main() {
     download_file "$BASEURL/zshrc" "$DSTPATH/zshrc"
     download_file "$BASEURL/latest_version" "$DSTPATH/version"
     
+
+cat <<EOF > "$HOME/.zshrc"
+INSTALLBASE=$DSTPATH
+BASEURL="$BASEURL"
+EOF
+
+    declare -f log_info >> "$HOME/.zshrc"
+    declare -f log_error >> "$HOME/.zshrc"
+
     echo "source $DSTPATH/zshrc" >> "$HOME/.zshrc"
 
     # Change default shell to Zsh

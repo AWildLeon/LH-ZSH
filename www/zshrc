@@ -1,20 +1,22 @@
 #!/usr/bin/env zsh
 # WARNING:
-# THIS FILE IS MANAGED BY LH ZSH
+# THIS FILE IS MANAGED BY INSERT-PROJECT-NAME
 # MODIFICATIONS WILL ONLY STAY TILL THE NEXT UPDATE!
 
-# Configuration Variables
-LHZSH_INSTBASE="$HOME/.lhzsh"
-LHZSH_BASEURL="https://zsh.onlh.de"
-
 # Source custom start script if it exists
-[[ -f "$HOME/.lhzsh.custom/start.zsh" ]] && source "$HOME/.lhzsh.custom/start.zsh"
+zshconfig_source() {
+    if [[ -f "$INSTALLBASE.custom/$1" ]]; then
+        source "$INSTALLBASE.custom/$1"
+    fi
+}
+
+zshconfig_source "start.zsh"
 
 # Check required commands for update functionality without locking out the user.
 update_check_enabled=true
 for cmd in curl; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "Warning: $cmd is not installed. Update check will be skipped." >&2
+        log_error "$cmd is not installed. Update check will be skipped." >&2
         update_check_enabled=false
     fi
 done
@@ -27,7 +29,7 @@ check_for_updates() {
     fi
 
     # Define file to record the last successful update check date
-    local last_check_file="${LHZSH_INSTBASE}/.last_update_check"
+    local last_check_file="${INSTALLBASE}/.last_update_check"
     local current_date
     current_date=$(date +%Y-%m-%d)
 
@@ -41,25 +43,18 @@ check_for_updates() {
     fi
 
     # Fetch local version if available
-    local version_file="${LHZSH_INSTBASE}/version"
+    local version_file="${INSTALLBASE}/version"
     local local_ver=""
     [[ -f "$version_file" ]] && local_ver=$(<"$version_file")
 
     # Attempt to fetch the remote version from the base URL.
     # Remove control characters to avoid JSON parsing issues.
     local remote_ver
-    remote_ver=$(curl -s "${LHZSH_BASEURL}/latest_version" | tr -d '\000-\031')
+    remote_ver=$(curl -s "${BASEURL}/latest_version" | tr -d '\000-\031')
     if [[ $? -ne 0 || -z "$remote_ver" ]]; then
-        echo "WARN: Update check failed (no internet or bad response)!" >&2
+        log_error "Update check failed (no internet or bad response)!" >&2
         return
     fi
-
-    # If you expect remote_ver to have a particular format (e.g. a commit SHA),
-    # you can validate it here. For example, if it's a 40-character SHA, uncomment:
-    # if [[ ! "$remote_ver" =~ ^[0-9a-f]{40}$ ]]; then
-    #     echo "WARN: Remote version format invalid. Skipping update check." >&2
-    #     return
-    # fi
 
     # Mark the update check as successful for today.
     printf "%s" "$current_date" > "$last_check_file"
@@ -70,10 +65,10 @@ check_for_updates() {
         echo "This will delete any custom configuration."
         read -r "response?Would you like to update? (Y/n) "
         if [[ -z "$response" || "$response" =~ ^[Yy]$ ]]; then
-            echo "Updating lhzsh to version $remote_ver"
+            echo "Updating INSERT-PROJECT-NAME to version $remote_ver"
             # Note: Changelog functionality has been omitted when using this endpoint.
             printf "%s" "$remote_ver" > "$version_file"
-            bash <(curl -s "${LHZSH_BASEURL}/zsh.sh")
+            bash <(curl -s "${BASEURL}/zsh.sh")
             exec zsh
         else
             echo "Update canceled."
@@ -90,55 +85,70 @@ fi
 export PATH="$PATH:$HOME/.local/bin"
 
 # Configure Oh-My-Zsh
-export ZSH="${LHZSH_INSTBASE}/oh-my-zsh"
+export ZSH="${INSTALLBASE}/oh-my-zsh"
 zstyle ':omz:update' mode auto    # Update automatically without asking
 zstyle ':omz:update' frequency 30   # Auto-update frequency in days
 
-# Detect distribution for plugins
+plugins=(git)
+
+
+# Detect Plugins based on available commands or system features
+if command -v docker >/dev/null 2>&1; then
+    plugins=(${plugins[@]} docker docker-compose)
+fi
+if command -v systemctl >/dev/null 2>&1; then
+    plugins=(${plugins[@]} systemd)
+fi
+if command -v code >/dev/null 2>&1; then
+    plugins=(${plugins[@]} vscode)
+fi
 if [[ -f /etc/arch-release ]]; then
-    DISTROPLUGIN="archlinux"
+    plugins=(${plugins[@]} archlinux)
 elif command -v dnf >/dev/null; then
-    DISTROPLUGIN="dnf"
+    plugins=(${plugins[@]} dnf)
 elif [[ -f /etc/debian_version ]]; then
-    DISTROPLUGIN="debian"
-else
-    DISTROPLUGIN=""
+    plugins=(${plugins[@]} debian)
+fi
+if command -v zoxide >/dev/null 2>&1; then
+    plugins=(${plugins[@]} zoxide)
+    alias cd=z
 fi
 
-plugins=(git docker docker-compose systemd vscode zoxide $DISTROPLUGIN)
-
-# Source custom plugins script if it exists
-[[ -f "$HOME/.lhzshrc.custom/plugins.zsh" ]] && source "$HOME/.lhzshrc.custom/plugins.zsh"
+zshconfig_source "plugins.zsh"
 
 # Load oh-my-zsh
 source "$ZSH/oh-my-zsh.sh"
 
 # Initialize prompt with oh-my-posh if available
 if command -v oh-my-posh >/dev/null 2>&1; then
-    eval "$(oh-my-posh init zsh --config "${LHZSH_INSTBASE}/theme.omp.json")"
+    eval "$(oh-my-posh init zsh --config "${INSTALLBASE}/theme.omp.json")"
 else
-    echo "oh-my-posh not found. Using default prompt."
+    log_error "oh-my-posh not found. Using default prompt."
 fi
-
-# Alias and additional configuration
-alias cd=z
 
 # Greet the user if in interactive mode
 if [[ -o interactive ]]; then
-    echo
     if command -v fastfetch >/dev/null 2>&1; then
+        echo
         fastfetch
     else
         echo "fastfetch not installed."
     fi
 fi
 
-# Source custom end script if it exists
-[[ -f "$HOME/.lhzshrc.custom/end.zsh" ]] && source "$HOME/.lhzshrc.custom/end.zsh"
+
+exit() {
+    clear # Clear the terminal screen before exiting
+    echo "Goodbye! Have a great day!"
+    builtin exit "$@"
+}
+
+zshconfig_source "end.zsh"
+
 
 # Cleanup environment variables
-unset LHZSH_INSTBASE LHZSH_BASEURL
+unset INSTALLBASE BASEURL
 
 # WARNING:
-# THIS FILE IS MANAGED BY LH ZSH
+# THIS FILE IS MANAGED BY INSERT-PROJECT-NAME
 # MODIFICATIONS WILL ONLY STAY TILL THE NEXT UPDATE!
