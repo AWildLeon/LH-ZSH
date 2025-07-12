@@ -1,13 +1,13 @@
 #!/bin/bash
 
-BASEURL="https://zsh.onlh.de/"
+BASEURL="https://zsh.onfr.de/"
 
 if [ -z "$HOME" ]; then
     echo "Your \$HOME is empty, can't continue!"
     exit 1
 fi
 
-DSTPATH="$HOME/.lhzsh"
+DSTPATH="$HOME/.frzsh"
 
 install_fastfetch_deb() {
     # Determine system architecture
@@ -104,7 +104,7 @@ cleanup_old_zsh() {
     read response
     if [[ "$response" =~ ^[yY]$ ]]; then
         echo "Proceeding with cleanup..."
-        rm -rf ~/.zshrc ~/.zshrc.d ~/.oh-my-zsh ~/.p10k.zsh ~/.lhzshver ~/.config/neofetch
+        rm -rf ~/.zshrc ~/.zshrc.d ~/.oh-my-zsh ~/.p10k.zsh ~/.frzshver ~/.config/neofetch
 
         package_manager=$(detect_package_manager)
         case $package_manager in
@@ -129,13 +129,13 @@ cleanup_old_zsh() {
     else
         echo "\n\nAborted cleanup. Installation will *NOT* proceed."
         echo "If you are coming from pre v1.0.0, please manually update by typing:"
-        echo "\nbash <(curl https://cdn.onlh.de/zsh.sh)"
+        echo "\nbash <(curl https://cdn.onfr.de/zsh.sh)"
         exit 0
     fi
 }
 
 main() {
-    if [ -f ~/.lhzshver ] || [ -d ~/.zshrc.d ]; then
+    if [ -f ~/.frzshver ] || [ -d ~/.zshrc.d ]; then
         cleanup_old_zsh
     fi
 
@@ -169,7 +169,7 @@ main() {
 
     clear
 
-    echo "Thank you for choosing Leon's ZSH Config."
+    echo "Thank you for choosing Flo's fork of Leon's ZSH Config."
     echo "Have an awesome day!"
 }
 
