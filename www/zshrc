@@ -68,7 +68,7 @@ check_for_updates() {
             echo "Updating INSERT-PROJECT-NAME to version $remote_ver"
             # Note: Changelog functionality has been omitted when using this endpoint.
             printf "%s" "$remote_ver" > "$version_file"
-            bash <(curl -s "${BASEURL}/zsh.sh")
+            bash <(curl -s "${BASEURL}")
             exec zsh
         else
             echo "Update canceled."
