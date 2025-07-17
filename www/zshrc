@@ -111,7 +111,7 @@ elif [[ -f /etc/debian_version ]]; then
 fi
 if command -v zoxide >/dev/null 2>&1; then
     plugins=(${plugins[@]} zoxide)
-    alias cd=z
+    #alias cd=z
 fi
 
 zshconfig_source "plugins.zsh"
