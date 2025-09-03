@@ -1,5 +1,5 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+# Simple workflow for deploying static content to FTP
+name: Deploy static content to FTP
 
 on:
   # Runs on pushes targeting the default branch
@@ -9,33 +9,25 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# Sets permissions of the GITHUB_TOKEN to allow deployment
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
-  group: "pages"
+  group: "ftp-deploy"
   cancel-in-progress: false
 
 jobs:
   # Single deploy job since we're just deploying
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Remove all lines between a \#GHA-REMOVE-BEGIN and \#GHA-REMOVE-END comment
+      - name: Remove all lines between a #GHA-REMOVE-BEGIN and #GHA-REMOVE-END comment
         run: |
           find . -type f -name '*.sh' -exec sed -i '/#GHA-REMOVE-BEGIN/,/#GHA-REMOVE-END/d' {} +
           find . -type f -name '*.html' -exec sed -i '/#GHA-REMOVE-BEGIN/,/#GHA-REMOVE-END/d' {} +
@@ -45,11 +37,10 @@ jobs:
           find . -type f -name '*.html' -exec sed -i 's/INSERT-PROJECT-NAME/LH-ZSH/g' {} +
           find . -type f -name '*.sh' -exec sed -i 's/INSERT-PROJECT-NAME/LH-ZSH/g' {} +
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          # Upload www folder
-          path: './www'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          server: ${{ secrets.FTP_IP }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWD }}
+          local-dir: ./www
