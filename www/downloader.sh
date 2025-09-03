@@ -1,8 +1,4 @@
 #!/bin/bash
-# <header>
-#   <meta http-equiv="refresh" content="0; url=/content.html">
-# </header>
-#<!--
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -26,9 +22,7 @@ fi
 
 echo "Downloading and running the $PROJECTNAME installation script..."
 
-
 download_file() {
-
     # This function downloads a file using curl or any other method
     local url="$1"
     local output="$2"
@@ -42,10 +36,7 @@ download_file() {
         echo "No download tool found (curl, wget, fetch). Please install one of them."
         exit 1
     fi
-    
 }
 
 source <(download_file "${BASEURL}/installer.sh" /dev/stdout)
 main && echo "Installation completed successfully!" || echo "Installation failed."
-
-# --->
