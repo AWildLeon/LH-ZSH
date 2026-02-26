@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091
 . /etc/os-release || {
     log_error "Failed to source /etc/os-release"
     exit 1
@@ -176,12 +177,15 @@ INSTALLBASE=$DSTPATH
 BASEURL="$BASEURL"
 EOF
 
-    declare -f log_info >> "$HOME/.zshrc"
-    declare -f log_error >> "$HOME/.zshrc"
+    # Copy over the log functions and source the main zshrc from the installer
+    { 
+        declare -f log_info 
+        declare -f log_error
+    } >> "$HOME/.zshrc"
 
     echo "source $DSTPATH/zshrc" >> "$HOME/.zshrc"
 
     # Change default shell to Zsh
-    chsh -s $(which zsh)
+    chsh -s "$(which zsh)"
 
 }

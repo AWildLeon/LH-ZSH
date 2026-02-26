@@ -11,6 +11,8 @@ if [ -z "$HOME" ]; then
     exit 1
 fi
 
+# shellcheck disable=SC2034
+# This gets used in a sourced context, so it may look unused in this file.
 DSTPATH="$HOME/.lhzsh"
 
 #GHA-REMOVE-BEGIN
@@ -40,3 +42,5 @@ download_file() {
 
 source <(download_file "${BASEURL}/installer.sh" /dev/stdout)
 main && echo "Installation completed successfully!" || echo "Installation failed."
+
+echo "NOTE: When Updating Please restart the shell"
