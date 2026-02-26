@@ -41,13 +41,6 @@ LH ZSH provides a default set of plugins that can be customized depending on the
 
 You can add your custom plugins through the custom plugins script (`~/.lhzshrc.custom/plugins.zsh`).
 
-### Prompt Engine
-
-LH ZSH uses [Oh My Posh](https://ohmyposh.dev/) to style the ZSH prompt:
-
-- **Configuration File**: The prompt configuration is defined in `$LHZSH_INSTBASE/theme.omp.json`.
-- **Command**: The prompt engine is initialized via `eval "$(oh-my-posh init zsh --config $LHZSH_INSTBASE/theme.omp.json)"`.
-
 ### Aliases and Environment Settings
 
 - **Aliases**:
@@ -89,7 +82,3 @@ Please ensure your code adheres to the style and conventions used throughout the
 ## License
 
 This configuration is open-source, and contributions are welcome. Please follow the guidelines in the repository for submitting pull requests or reporting issues.
-
----
-
-For any further questions or customizations, please refer to the `oh-my-zsh` and `Oh My Posh` documentation.

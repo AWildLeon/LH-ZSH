@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 . /etc/os-release || {
     log_error "Failed to source /etc/os-release"
     exit 1
@@ -14,7 +15,7 @@ log_error() {
 }
 
 detect_sudo_tool() {
-    if [ $(id -u) -eq 0 ]; then
+    if [ "$(id -u)" -eq 0 ]; then
         echo ""
         log_info "Running as root, no sudo tool required."
     else
@@ -144,10 +145,12 @@ main() {
 
     install_packages
 
-    mkdir -p "$HOME/.local/bin"
-    export PATH="$PATH:$HOME/.local/bin"
+    # Remove Oh my Posh if it exists
+    if [ -f "$HOME/.local/bin/oh-my-posh" ]; then
+        rm "$HOME/.local/bin/oh-my-posh" && \
+        rm -rf "$HOME/.cache/oh-my-posh"
+    fi
 
-    download_file https://ohmyposh.dev/install.sh /dev/stdout | bash -s -- -d ~/.local/bin
     mkdir -p ~/.cache
 
 
@@ -163,7 +166,7 @@ main() {
 
 
     # Download configuration files
-    download_file "$BASEURL/theme.omp.json" "$DSTPATH/theme.omp.json"
+    download_file "$BASEURL/theme.zsh" "$DSTPATH/theme.zsh"
     download_file "$BASEURL/zshrc" "$DSTPATH/zshrc"
     download_file "$BASEURL/latest_version" "$DSTPATH/version"
     

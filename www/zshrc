@@ -10,6 +10,11 @@ zshconfig_source() {
     fi
 }
 
+#Check if USER is set, if not try to set it from the id command, if that also fails, set it to "unknown"
+if [[ -z "$USER" ]]; then
+    export USER=$(id -un 2>/dev/null || echo "unknown")
+fi
+
 zshconfig_source "start.zsh"
 
 # Check required commands for update functionality without locking out the user.
@@ -119,12 +124,8 @@ zshconfig_source "plugins.zsh"
 # Load oh-my-zsh
 source "$ZSH/oh-my-zsh.sh"
 
-# Initialize prompt with oh-my-posh if available
-if command -v oh-my-posh >/dev/null 2>&1; then
-    eval "$(oh-my-posh init zsh --config "${INSTALLBASE}/theme.omp.json")"
-else
-    log_error "oh-my-posh not found. Using default prompt."
-fi
+# Initialize prompt
+source "$INSTALLBASE/theme.zsh"
 
 # Greet the user if in interactive mode
 if [[ -o interactive ]]; then
