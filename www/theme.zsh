@@ -1,122 +1,77 @@
 autoload -U colors && colors
 setopt prompt_subst
 
-# Only set up Git integration if Git is actually installed on this machine.
-if (( $+commands[git] )); then
-    autoload -Uz vcs_info
-    # Turn on the git module
-    zstyle ':vcs_info:*' enable git
-    
-    # Enable checking for (un)staged changes
-    zstyle ':vcs_info:*' check-for-changes true
-    # Set the dirty string to an asterisk
-    zstyle ':vcs_info:*' stagedstr '*'
-    zstyle ':vcs_info:*' unstagedstr '*'
-    
-    # Format the git info: " - (branch_name*)" in green.
-    # %u is unstaged changes, %c is staged changes
-    zstyle ':vcs_info:git:*' formats '- %F{green}(%b%u%c)%f'
-    zstyle ':vcs_info:git:*' actionformats '- %F{green}(%b|%a%u%c)%f'
-fi
-
-# Our color palette
 COLOR_USER="#CCCCCC"
 COLOR_HOST="#6A6A6A"
 COLOR_PATH="#004e8e"
 COLOR_SYMBOL="#CC00CC"
 COLOR_ERROR="#FF0000"
-COLOR_JOBS="#FFFF00"
 
-# Symbols we use in the prompt
-SYMBOL_PROMPT="❯" # The arrow ❯
-SYMBOL_JOBS="✦"         # The star for background jobs
-
-# This function runs every time BEFORE the prompt is displayed.
-# We use it to calculate dynamic things like git status, errors, etc.
-# Renamed to a unique function name to avoid conflicts with other plugins/OMZ
 my_custom_prompt_precmd() {
-    # Capture the exit code of the LAST command right away.
     local exit_code=$?
     
-    # If we have git set up, ask vcs_info what the status is.
-    local git_part=""
-    if (( $+functions[vcs_info] )); then
-        vcs_info
-        git_part="${vcs_info_msg_0_}"
-    fi
-
-    # Build the first part: "user@host ~/path"
-    # %n = username, %m = hostname, %~ = path (shortened with ~)
-    local user_part="%F{$COLOR_USER}%n%f"
-    local host_part="%F{$COLOR_HOST}@%m %f"
-    local path_part="%F{$COLOR_PATH}%~ %f"
-
-
-    # Build the prompt symbol (❯)
-    # If the last command failed (exit code != 0), we turn it RED.
-    local current_symbol_color="$COLOR_SYMBOL"
+    local symbol_color="$COLOR_SYMBOL"
     if [[ $exit_code -ne 0 ]]; then
-        current_symbol_color="$COLOR_ERROR"
+        symbol_color="$COLOR_ERROR"
     fi
-    local symbol_part="%F{$current_symbol_color}${SYMBOL_PROMPT} %f"
 
-    # Background Jobs Indicator
-    # We use a Zsh trick "%(1j.TRUE.FALSE)" to show the star only if jobs > 0.
-    local jobs_indicator="%(1j. %F{$COLOR_JOBS}${SYMBOL_JOBS}%j%f.)"
-
-    # Line 1: user@host path - (git) star
-    # Line 2: ❯ 
-    PROMPT="${user_part}${host_part}${path_part}${git_part}${jobs_indicator}
-${symbol_part}"
-
-    # Make sure we don't have a right-side prompt hanging around.
-    RPROMPT=""
+    PROMPT="%F{$COLOR_USER}${USER:-$(whoami)}%f%F{$COLOR_HOST}@${HOST%%.*} %f%F{$COLOR_PATH}%~ %f
+%F{$symbol_color}❯ %f"
     
-    # Set the terminal window title to the current folder.
     print -Pn "\e]0;%~\a"
 }
 
-# Hook our function into the Zsh precmd array
-# This ensures it runs alongside other plugins (like syntax highlighting)
-# instead of overwriting them.
-autoload -Uz add-zsh-hook
+autoload -Uz add-zsh-hook add-zle-hook-widget
 add-zsh-hook precmd my_custom_prompt_precmd
 
-# ------------------------------------------------------------------
-# Transient Prompt Magic (Clean History)
-# ------------------------------------------------------------------
-# When you press ENTER to run a command, this function kicks in.
-# It replaces the big, detailed prompt with just a simple "❯" symbol.
-# This keeps your terminal history looking super clean!
-function zle-line-finish {
-    # If we are in the middle of a search (Ctrl+R), don't mess with the prompt.
-    if [[ $WIDGET == "zle-isearch-update" || $WIDGET == "zle-isearch-exit" ]]; then 
-        return
+typeset -gi TRANSIENT_PROMPT_FD=-1
+TRANSIENT_PROMPT_SYMBOL="%F{$COLOR_SYMBOL}❯ %f"
+zmodload -F zsh/system b:sysopen 2>/dev/null
+
+_transient_prompt_restore() {
+    if (( TRANSIENT_PROMPT_FD != -1 )); then
+        zle -F "$TRANSIENT_PROMPT_FD"
+        exec {TRANSIENT_PROMPT_FD}<&-
+        TRANSIENT_PROMPT_FD=-1
     fi
 
-    # The simple "Transient" prompt: Just the colored arrow.
-    local transient_symbol="%F{$COLOR_SYMBOL}${SYMBOL_PROMPT} %f"
-    
-    # Swap the prompt for the simple one right before the command runs.
-    PROMPT="${transient_symbol}"
-    
-    # Redraw the line so you see the change immediately.
-    zle reset-prompt
-}
-
-# When the command finishes and we are ready for a NEW prompt...
-# This function restores the full, detailed prompt again.
-function zle-line-init {
-    # Call our main setup function to rebuild the full PROMPT variable.
     my_custom_prompt_precmd
-    # Tell Zsh to use the new (full) prompt.
     zle reset-prompt
 }
 
-# Tell Zsh to use these special functions we just wrote.
-zle -N zle-line-finish
-zle -N zle-line-init
+_transient_prompt_schedule_restore() {
+    if (( TRANSIENT_PROMPT_FD == -1 )) && (( $+builtins[sysopen] )); then
+        sysopen -ru TRANSIENT_PROMPT_FD /dev/null || TRANSIENT_PROMPT_FD=-1
+        (( TRANSIENT_PROMPT_FD != -1 )) && zle -F "$TRANSIENT_PROMPT_FD" _transient_prompt_restore
+    fi
+}
 
-# Start everything up!
+_transient_prompt_collapse_current() {
+    PROMPT="${TRANSIENT_PROMPT_SYMBOL}"
+    RPROMPT=""
+    zle reset-prompt
+    _transient_prompt_schedule_restore
+}
+
+_transient_prompt_line_finish() {
+    _transient_prompt_collapse_current
+}
+
+add-zle-hook-widget line-finish _transient_prompt_line_finish
+
+for keymap in emacs viins vicmd; do
+    [[ -n "${terminfo[khome]}" ]] && bindkey -M "$keymap" "${terminfo[khome]}" beginning-of-line
+    [[ -n "${terminfo[kend]}" ]]  && bindkey -M "$keymap" "${terminfo[kend]}" end-of-line
+
+    bindkey -M "$keymap" '^[[H'  beginning-of-line
+    bindkey -M "$keymap" '^[[1~' beginning-of-line
+    bindkey -M "$keymap" '^[[7~' beginning-of-line
+    bindkey -M "$keymap" '^[OH'  beginning-of-line
+
+    bindkey -M "$keymap" '^[[F'  end-of-line
+    bindkey -M "$keymap" '^[[4~' end-of-line
+    bindkey -M "$keymap" '^[[8~' end-of-line
+    bindkey -M "$keymap" '^[OF'  end-of-line
+done
+
 my_custom_prompt_precmd
-
